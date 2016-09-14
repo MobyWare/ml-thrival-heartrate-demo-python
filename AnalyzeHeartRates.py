@@ -31,7 +31,7 @@ for index, filename in enumerate(files):
     if samples is None:
         samples = amplitude[np.newaxis]
     else:
-        np.concatenate((samples, amplitude[np.newaxis]), axis=0)
+        samples = np.concatenate((samples, amplitude[np.newaxis]), axis=0)
     print (\
         '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
         format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))

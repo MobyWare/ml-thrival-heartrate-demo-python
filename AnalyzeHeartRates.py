@@ -19,7 +19,8 @@ def printClusterMetrics(clusterModel, observations):
     else:        
         silhouetteMetric = metrics.silhouette_score(observations, labels, metric='euclidean')
         print(\
-            'There are {} obervations and {} clusters, with a confidence of {}.\nThe labels were: {}'.format(observations.shape[0], len(centers), silhouetteMetric, labels))
+            'There are {} obervations and {} clusters, with a confidence of {}.\nThe labels were: {}'.\
+            format(observations.shape[0], len(centers), silhouetteMetric, labels))
 
 samples = None
 files = ['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt']

@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy.signal as signal
 from sklearn.cluster import AffinityPropagation
 from sklearn import metrics
@@ -22,6 +23,24 @@ def printClusterMetrics(clusterModel, observations):
             'There are {} obervations and {} clusters, with a confidence of {}.\nThe labels were: {}'.\
             format(observations.shape[0], len(centers), silhouetteMetric, labels))
 
+def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, clusterLabels=None):
+    labels = None
+    if seriesLabels is None:
+        labels = ["label"+i for i in range(0, observations.shape[0])]
+    else:
+        labels = seriesLabels
+    
+    if not (clusterLabels is None) and clusterLabels.size < observations.shape[0]:
+        raise ValueError("There are too few labels for the number of observations")
+    
+    for index, amp in enumerate(amplitudes):
+        plt.plot(frequencySpectrum, amp, label=seriesLabels[index])
+        plt.grid(True)
+    
+    plt.legend()
+    plt.show()
+
+    
 samples = None
 files = ['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt']
 
@@ -39,5 +58,5 @@ for index, filename in enumerate(files):
 
 printClusterMetrics(AffinityPropagation(max_iter=5000), samples)
 
-
+plotFFTofHeartRate(samples, frequencySpectrum, files)
 

@@ -11,10 +11,9 @@ def fix(array):
         n = np.append(n, [1])
     return n
 
-def printClusterMetrics(clusterModel, observations):
-    clusters = clusterModel.fit(observations)
-    centers = clusters.cluster_centers_indices_
-    labels = clusters.labels_
+def printClusterMetrics(affinity_cluster, observations):
+    centers = affinity_cluster.cluster_centers_indices_
+    labels = affinity_cluster.labels_
     if centers is None or len(centers) < 1:
         print("Clustering algorithm didn't converge.")
     else:        
@@ -25,24 +24,55 @@ def printClusterMetrics(clusterModel, observations):
 
 def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, clusterLabels=None):
     labels = None
+    default_colors = np.array(['red', 'black', 'green', 'blue', 'yellow'])
+    unique_cluster_labels = None
+    cluster_colors = None
+    cluster_labels = None
+    temp_cluster_labels = None
+
     if seriesLabels is None:
-        labels = ["label"+i for i in range(0, observations.shape[0])]
+        labels = np.array(["label"+i for i in range(0, observations.shape[0])])
     else:
         labels = seriesLabels
+       
+    if not (clusterLabels is None):
+        if clusterLabels.size < amplitudes.shape[0]:
+            raise ValueError("There are too few labels for the number of observations")
+
+        if clusterLabels.size > default_colors.size:
+            raise RuntimeError("We have too many labels we only suport {} clusters in this version.".format(default_colors.size))
+        
+        unique_cluster_labels = np.unique(clusterLabels)
+        cluster_colors = {unique_cluster_labels[i]:default_colors[i] for i in range(0,unique_cluster_labels.size)}
+        cluster_labels = {i:None for i in unique_cluster_labels}
+
+        for idx, lbl in enumerate(labels):
+            if cluster_labels[clusterLabels[idx]] is None:
+                cluster_labels[clusterLabels[idx]] = lbl
+            else:
+                cluster_labels[clusterLabels[idx]] += " | " + lbl
+        
+        labels = [cluster_labels[clusterLabels[i]] for i in range(0, labels.size)]
     
-    if not (clusterLabels is None) and clusterLabels.size < observations.shape[0]:
-        raise ValueError("There are too few labels for the number of observations")
+        for index, amp in enumerate(amplitudes):
+            plt.plot(frequencySpectrum, amp, label=labels[index], color=cluster_colors[clusterLabels[index]])
+            plt.grid(True)
     
-    for index, amp in enumerate(amplitudes):
-        plt.plot(frequencySpectrum, amp, label=seriesLabels[index])
-        plt.grid(True)
-    
+        print('Starting plot with clusters ...')
+    else:
+        for index, amp in enumerate(amplitudes):
+            plt.plot(frequencySpectrum, amp, label=labels[index])
+            plt.grid(True)        
+        
+        print('Starting plot wihtout clusters ...')
+
     plt.legend()
     plt.show()
 
     
 samples = None
-files = ['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt']
+affinity_cluster = None
+files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt'])
 
 for index, filename in enumerate(files):
     intervals = np.loadtxt(filename)
@@ -56,7 +86,8 @@ for index, filename in enumerate(files):
         '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
         format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))
 
-printClusterMetrics(AffinityPropagation(max_iter=5000), samples)
+affinity_cluster = AffinityPropagation().fit(samples)
 
+printClusterMetrics(affinity_cluster, samples)
 plotFFTofHeartRate(samples, frequencySpectrum, files)
 

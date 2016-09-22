@@ -22,6 +22,21 @@ def printClusterMetrics(affinity_cluster, observations):
             'There are {} obervations and {} clusters, with a confidence of {}.\nThe labels were: {}'.\
             format(observations.shape[0], len(centers), silhouetteMetric, labels))
 
+
+def getAverageBPM(samples):
+    bpm_values = np.array([])
+    TOP_N = 5
+
+    for observation in samples:
+        bpm_values = np.append(bpm_values, np.average(map(lambda x: 60000/x, observation)))
+    
+    if bpm_values.size <= TOP_N:
+        print('The beats per minute were: {}.'.format(bpm_values))
+    else:
+        print('The beats per minute were (1st 5 of {}):{}.'.format(bpm_values[0:TOP_N]))
+    
+    return bpm_values
+
 def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, clusterLabels=None):
     labels = None
     default_colors = np.array(['red', 'black', 'green', 'blue', 'yellow'])
@@ -71,23 +86,37 @@ def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, cluster
 
     
 samples = None
+intervals_collection = None
 affinity_cluster = None
-files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt'])
+MAX_INTERVAL_NUMBER = 1000
+MAX_INTERVAL_VALUE = 2000
+interval_number = MAX_INTERVAL_NUMBER
+
+files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/terry_1.txt', 'data/terry_2.txt'])
 
 for index, filename in enumerate(files):
     intervals = np.loadtxt(filename)
-    intervals = intervals[intervals < 2000] 
+    intervals = intervals[intervals < MAX_INTERVAL_VALUE] 
     frequencySpectrum, amplitude = signal.welch(fix(intervals), 5, scaling='spectrum')
+    if intervals.size > MAX_INTERVAL_NUMBER:
+        interval_number = MAX_INTERVAL_NUMBER
+    else:
+        interval_number = intervals.size
+
+
     if samples is None:
         samples = amplitude[np.newaxis]
+        intervals_collection = intervals[0:interval_number][np.newaxis]
     else:
         samples = np.concatenate((samples, amplitude[np.newaxis]), axis=0)
+        intervals_collection = np.append(intervals_collection, intervals[0:interval_number][np.newaxis], axis=0)
     print (\
         '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
         format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))
 
 affinity_cluster = AffinityPropagation().fit(samples)
 
-printClusterMetrics(affinity_cluster, samples)
-plotFFTofHeartRate(samples, frequencySpectrum, files)
+getAverageBPM(intervals_collection)
+#printClusterMetrics(affinity_cluster, samples)
+#plotFFTofHeartRate(samples, frequencySpectrum, files)
 

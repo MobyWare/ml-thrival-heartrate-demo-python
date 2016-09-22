@@ -84,39 +84,51 @@ def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, cluster
     plt.legend()
     plt.show()
 
+def getSpectrumAndIntervalsFromFiles(files=[], debug=False):
+    samples = None
+    intervals_collection = None
+    MAX_INTERVAL_NUMBER = 800
+    MAX_INTERVAL_VALUE = 2000
+    interval_number = MAX_INTERVAL_NUMBER
+
+
+    for index, filename in enumerate(files):
+        intervals = np.loadtxt(filename)
+        intervals = intervals[intervals < MAX_INTERVAL_VALUE][0:MAX_INTERVAL_NUMBER] 
+        frequencySpectrum, amplitude = signal.welch(fix(intervals), 5, scaling='spectrum')
+        if intervals.size > MAX_INTERVAL_NUMBER:
+            interval_number = MAX_INTERVAL_NUMBER
+        else:
+            interval_number = intervals.size
+
+        if samples is None:
+            samples = amplitude[np.newaxis]
+            intervals_collection = intervals[0:interval_number][np.newaxis]
+        else:
+            samples = np.concatenate((samples, amplitude[np.newaxis]), axis=0)
+            intervals_collection = np.append(intervals_collection, intervals[0:interval_number][np.newaxis], axis=0)
+        
+        if debug == True:
+            print (\
+                '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
+                format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))
+        
+    return (samples, frequencySpectrum, intervals_collection)
     
-samples = None
-intervals_collection = None
-affinity_cluster = None
-MAX_INTERVAL_NUMBER = 1000
-MAX_INTERVAL_VALUE = 2000
-interval_number = MAX_INTERVAL_NUMBER
+def showThrivalPlotNoCluster():
+    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt'])
+    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True)
+    plotFFTofHeartRate(samples, spectrum, files) 
 
-files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/terry_1.txt', 'data/terry_2.txt'])
+def showThrivalPlotWithCluster():
+    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/bob5.txt'])
+    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True)
+    plotFFTofHeartRate(samples, spectrum, files, AffinityPropagation().fit(samples).labels_)
 
-for index, filename in enumerate(files):
-    intervals = np.loadtxt(filename)
-    intervals = intervals[intervals < MAX_INTERVAL_VALUE] 
-    frequencySpectrum, amplitude = signal.welch(fix(intervals), 5, scaling='spectrum')
-    if intervals.size > MAX_INTERVAL_NUMBER:
-        interval_number = MAX_INTERVAL_NUMBER
-    else:
-        interval_number = intervals.size
-
-
-    if samples is None:
-        samples = amplitude[np.newaxis]
-        intervals_collection = intervals[0:interval_number][np.newaxis]
-    else:
-        samples = np.concatenate((samples, amplitude[np.newaxis]), axis=0)
-        intervals_collection = np.append(intervals_collection, intervals[0:interval_number][np.newaxis], axis=0)
-    print (\
-        '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
-        format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))
-
-affinity_cluster = AffinityPropagation().fit(samples)
-
-getAverageBPM(intervals_collection)
-#printClusterMetrics(affinity_cluster, samples)
-#plotFFTofHeartRate(samples, frequencySpectrum, files)
+if __name__ == "__main__":
+    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/terry_1.txt', 'data/terry_2.txt'])
+    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True) 
+    getAverageBPM(intervals)
+    #printClusterMetrics(affinity_cluster, samples)
+    #plotFFTofHeartRate(samples, spectrum, files)
 

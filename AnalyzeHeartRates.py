@@ -67,7 +67,7 @@ def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, cluster
             else:
                 cluster_labels[clusterLabels[idx]] += " | " + lbl
         
-        labels = [cluster_labels[clusterLabels[i]] for i in range(0, labels.size)]
+        labels = [cluster_labels[clusterLabels[i]] for i in range(0, len(labels))]
     
         for index, amp in enumerate(amplitudes):
             plt.plot(frequencySpectrum, amp, label=labels[index], color=cluster_colors[clusterLabels[index]])
@@ -87,7 +87,7 @@ def plotFFTofHeartRate(amplitudes, frequencySpectrum, seriesLabels=None, cluster
 def getSpectrumAndIntervalsFromFiles(files=[], debug=False):
     samples = None
     intervals_collection = None
-    MAX_INTERVAL_NUMBER = 800
+    MAX_INTERVAL_NUMBER = 700
     MAX_INTERVAL_VALUE = 2000
     interval_number = MAX_INTERVAL_NUMBER
 
@@ -113,22 +113,25 @@ def getSpectrumAndIntervalsFromFiles(files=[], debug=False):
                 '{}) {}. Both the spectrum: {} and amplitude: {} should had have the same length. The currnet # of samples is: {}.\n Amplitude (1st five): {}'.\
                 format(str(index + 1), filename, len(frequencySpectrum), len(amplitude), samples.shape[0], amplitude[0:5]))
         
-    return (samples, frequencySpectrum, intervals_collection)
+    return (samples, frequencySpectrum, intervals_collection, map(lambda l: l.replace("data/","").replace(".txt", ""), files))
     
 def showThrivalPlotNoCluster():
-    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt'])
-    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True)
-    plotFFTofHeartRate(samples, spectrum, files) 
+    files = np.array(['data/eve1_1.txt', 'data/eve1_2.txt', 'data/bob1.txt'])
+    samples, spectrum, intervals, labels = getSpectrumAndIntervalsFromFiles(files, True)
+    plotFFTofHeartRate(samples, spectrum, labels) 
 
 def showThrivalPlotWithCluster():
-    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/bob5.txt'])
-    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True)
-    plotFFTofHeartRate(samples, spectrum, files, AffinityPropagation().fit(samples).labels_)
+    files = np.array(['data/eve1_1.txt', 'data/eve1_2.txt', 'data/bob1.txt'])
+    samples, spectrum, intervals, labels = getSpectrumAndIntervalsFromFiles(files, True)
+    plotFFTofHeartRate(samples, spectrum, labels, AffinityPropagation().fit(samples).labels_)
+
+def showThrivalPlotWithClusterToID():
+    files = np.array(['data/eve1_1.txt', 'data/eve1_2.txt', 'data/bob1.txt', 'data/bob5.txt'])
+    samples, spectrum, intervals, labels = getSpectrumAndIntervalsFromFiles(files, True)
+    plotFFTofHeartRate(samples, spectrum, labels, np.array(AffinityPropagation().fit(samples).labels_))
 
 if __name__ == "__main__":
-    files = np.array(['data/alice1.txt', 'data/alice2.txt', 'data/bob1.txt', 'data/terry_1.txt', 'data/terry_2.txt'])
-    samples, spectrum, intervals = getSpectrumAndIntervalsFromFiles(files, True) 
-    getAverageBPM(intervals)
+    showThrivalPlotNoCluster()
     #printClusterMetrics(affinity_cluster, samples)
     #plotFFTofHeartRate(samples, spectrum, files)
 
